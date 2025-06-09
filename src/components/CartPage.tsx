@@ -83,38 +83,8 @@ const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
         consent: true
       };
 
-      console.log('Sending order data:', orderData);
+      console.log('Sending order data to payments API:', orderData);
 
-      console.log('Making form submission call...');
-      const response = await fetch('/api/astrology-form-submission', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-
-      console.log('Form submission response status:', response.status);
-
-      if (!response.ok) {
-        throw new Error(`Form submission failed with status ${response.status}`);
-      }
-
-      const responseText = await response.text();
-      console.log('Form submission response text:', responseText);
-
-      let responseData = {};
-      if (responseText.trim()) {
-        try {
-          responseData = JSON.parse(responseText);
-          console.log('Form submission response data:', responseData);
-        } catch (jsonError) {
-          console.warn('Form submission returned non-JSON response:', responseText);
-        }
-      } else {
-        console.warn('Form submission returned empty response');
-      }
-
-      console.log('Making payment initialization call...');
-      
       const paymentsResponse = await fetch('/api/astrology-payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
