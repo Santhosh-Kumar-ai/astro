@@ -39,7 +39,7 @@ const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
     try {
       console.log('Verifying payment:', paymentData);
 
-      const response = await fetch('/api/verify-payment', {
+      const response = await fetch('https://n8n.commcal.in/webhook/payment-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
