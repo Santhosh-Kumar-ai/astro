@@ -45,7 +45,8 @@ const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
         body: JSON.stringify({
           razorpay_payment_id: paymentData.razorpay_payment_id,
           razorpay_order_id: paymentData.razorpay_order_id,
-          razorpay_signature: paymentData.razorpay_signature
+          razorpay_signature: paymentData.razorpay_signature,
+          order_id: paymentData.razorpay_order_id
         })
       });
 
