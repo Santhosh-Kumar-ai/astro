@@ -14,6 +14,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/api/payment-verification': {
+        target: 'https://n8n.commcal.in/webhook/payment-verification',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/payment-verification/, ''),
+      },
     },
   },
 });
