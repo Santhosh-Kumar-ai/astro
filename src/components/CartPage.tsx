@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, Check, CreditCard, Shield, Sparkles, Star, Moon } from 'lucide-react';
+import { ArrowLeft, FileText, Check, CreditCard, Shield, Sparkles, Star, Moon, AlertCircle } from 'lucide-react';
 
 interface CartPageProps {
   onBack: () => void;
   onSuccess: () => void;
+  onFailure: () => void;
 }
 
 interface FormData {
@@ -23,10 +24,12 @@ declare global {
   }
 }
 
-const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
+const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess, onFailure }) => {
   const [formData, setFormData] = useState<FormData | null>(null);
   const [consentChecked, setConsentChecked] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'success' | 'error' | null>(null);
 
   useEffect(() => {
     const savedData = localStorage.getItem('astrologyForm');
@@ -38,6 +41,8 @@ const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
   const verifyPayment = async (paymentData: any) => {
     try {
       console.log('Verifying payment:', paymentData);
+      setVerificationMessage('Verifying cosmic payment signature...');
+      setVerificationStatus(null);
 
       const response = await fetch('/api/payment-verification', {
         method: 'POST',
@@ -57,17 +62,39 @@ const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
       const verificationResult = await response.json();
       console.log('Verification result:', verificationResult);
 
-      if (verificationResult.verified || verificationResult.success) {
+      // Check if server_generated_signature matches razorpay_signature
+      const serverSignature = verificationResult.server_generated_signature;
+      const razorpaySignature = paymentData.razorpay_signature;
+      
+      if (serverSignature && serverSignature === razorpaySignature) {
+        setVerificationMessage('Payment successfully verified! ✨');
+        setVerificationStatus('success');
         localStorage.setItem('paymentSuccess', 'true');
         localStorage.setItem('paymentDetails', JSON.stringify(paymentData));
-        onSuccess();
+        
+        // Show success message for 2 seconds before navigating
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
       } else {
-        throw new Error('Payment verification failed');
+        setVerificationMessage('Payment verification failed - Signature mismatch');
+        setVerificationStatus('error');
+        
+        // Show error message for 3 seconds before navigating to failure page
+        setTimeout(() => {
+          onFailure();
+        }, 3000);
       }
     } catch (error) {
       console.error('Payment verification error:', error);
-      alert('Payment verification failed. Please contact support if amount was debited.');
+      setVerificationMessage('Payment verification failed. Please contact support if amount was debited.');
+      setVerificationStatus('error');
       setIsProcessing(false);
+      
+      // Show error message for 3 seconds before navigating to failure page
+      setTimeout(() => {
+        onFailure();
+      }, 3000);
     }
   };
 
@@ -316,14 +343,42 @@ const CartPage: React.FC<CartPageProps> = ({ onBack, onSuccess }) => {
             </div>
           </div>
 
+          {/* Verification Message */}
+          {verificationMessage && (
+            <div className={`relative overflow-hidden rounded-xl transition-all duration-500 ${
+              verificationStatus === 'success' 
+                ? 'bg-gradient-to-r from-green-600/20 to-emerald-500/20 border-green-500/30' 
+                : 'bg-gradient-to-r from-red-600/20 to-pink-500/20 border-red-500/30'
+            } border backdrop-blur-sm`}>
+              <div className="relative p-4">
+                <div className="flex items-center space-x-3">
+                  {verificationStatus === 'success' ? (
+                    <Check className="h-6 w-6 text-green-400" />
+                  ) : (
+                    <AlertCircle className="h-6 w-6 text-red-400" />
+                  )}
+                  <span className={`font-bold ${
+                    verificationStatus === 'success' ? 'text-green-300' : 'text-red-300'
+                  }`}>
+                    {verificationMessage}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Payment Button */}
           <button
             onClick={handlePayment}
-            disabled={!consentChecked || isProcessing}
+            disabled={!consentChecked || isProcessing || verificationMessage !== null}
             className="w-full mystical-btn text-white font-bold py-5 rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-3 text-lg"
           >
             <CreditCard className="h-6 w-6" />
-            <span>{isProcessing ? 'Channeling cosmic energy...' : 'Unlock Cosmic Wisdom ₹500'}</span>
+            <span>
+              {verificationMessage ? 'Processing...' : 
+               isProcessing ? 'Channeling cosmic energy...' : 
+               'Unlock Cosmic Wisdom ₹500'}
+            </span>
             <Sparkles className="h-6 w-6" />
           </button>
 
